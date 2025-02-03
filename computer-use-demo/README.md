@@ -48,6 +48,18 @@ docker run \
 
 Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
 
+### LiteLLM Proxy Server
+```bash
+docker run \
+    -e LITELLM_PROXY_API_KEY=%your_api_key% \
+    -v $HOME/.anthropic:/home/computeruse/.anthropic \
+    -p 5900:5900 \
+    -p 8501:8501 \
+    -p 6080:6080 \
+    -p 8080:8080 \
+    -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+```
+
 ### Bedrock
 
 > [!TIP]

@@ -65,15 +65,21 @@ class Sender(StrEnum):
 def setup_state():
     if "messages" not in st.session_state:
         st.session_state.messages = []
-    if "api_key" not in st.session_state:
-        # Try to load API key from file first, then environment
-        st.session_state.api_key = load_from_storage("api_key") or os.getenv(
-            "ANTHROPIC_API_KEY", ""
-        )
     if "provider" not in st.session_state:
         st.session_state.provider = (
             os.getenv("API_PROVIDER", "anthropic") or APIProvider.ANTHROPIC
         )
+    if st.session_state.provider == APIProvider.ANTHROPIC:
+        if "api_key" not in st.session_state:
+            # Try to load API key from file first, then environment
+            st.session_state.api_key = load_from_storage("api_key") or os.getenv(
+                "ANTHROPIC_API_KEY", ""
+            )
+    elif st.session_state.provider == APIProvider.LITELLM:
+        if "litellm_proxy_api_key" not in st.session_state:
+            st.session_state.litellm_proxy_api_key = load_from_storage("litellm_proxy_api_key") or os.getenv(
+                "LITELLM_PROXY_API_KEY", ""
+            )
     if "provider_radio" not in st.session_state:
         st.session_state.provider_radio = st.session_state.provider
     if "model" not in st.session_state:
@@ -136,6 +142,13 @@ async def main():
                 type="password",
                 key="api_key",
                 on_change=lambda: save_to_storage("api_key", st.session_state.api_key),
+            )
+        elif st.session_state.provider == APIProvider.LITELLM:
+            st.text_input(
+                "LiteLLM Proxy API Key",
+                type="password",
+                key="litellm_proxy_api_key",
+                on_change=lambda: save_to_storage("litellm_proxy_api_key", st.session_state.litellm_proxy_api_key),
             )
 
         st.number_input(
@@ -295,6 +308,10 @@ def validate_auth(provider: APIProvider, api_key: str | None):
             )
         except DefaultCredentialsError:
             return "Your google cloud credentials are not set up correctly."
+    if provider == APIProvider.LITELLM:
+        litellm_key = st.session_state.get("litellm_proxy_api_key", None) or os.getenv("LITELLM_PROXY_API_KEY", None)
+        if not litellm_key:
+            return "Enter your LiteLLM Proxy API key in the sidebar to continue."
 
 
 def load_from_storage(filename: str) -> str | None:
