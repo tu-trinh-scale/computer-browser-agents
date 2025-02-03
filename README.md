@@ -1,4 +1,4 @@
-# Running Computer- and Browser-Use Agents on BrowserART
+# Running Agents on BrowserART
 
 Currently supports Anthropic's Claude Sonnet-CU.
 
