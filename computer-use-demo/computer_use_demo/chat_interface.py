@@ -2,9 +2,13 @@
 Entrypoint for streamlit, see https://docs.streamlit.io/
 """
 
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import asyncio
 import base64
-import os
 import subprocess
 import traceback
 from contextlib import contextmanager
@@ -77,9 +81,9 @@ def setup_state():
             )
     elif st.session_state.provider == APIProvider.LITELLM:
         if "litellm_proxy_api_key" not in st.session_state:
-            st.session_state.litellm_proxy_api_key = load_from_storage("litellm_proxy_api_key") or os.getenv(
-                "LITELLM_PROXY_API_KEY", ""
-            )
+            st.session_state.litellm_proxy_api_key = load_from_storage(
+                "litellm_proxy_api_key"
+            ) or os.getenv("LITELLM_PROXY_API_KEY", "")
     if "provider_radio" not in st.session_state:
         st.session_state.provider_radio = st.session_state.provider
     if "model" not in st.session_state:
@@ -112,7 +116,7 @@ async def main():
 
     st.markdown(STREAMLIT_STYLE, unsafe_allow_html=True)
 
-    st.title("Claude Computer Use Demo")
+    st.title("Sonnet CU")
 
     if not os.getenv("HIDE_WARNING", False):
         st.warning(WARNING_TEXT)
@@ -148,7 +152,9 @@ async def main():
                 "LiteLLM Proxy API Key",
                 type="password",
                 key="litellm_proxy_api_key",
-                on_change=lambda: save_to_storage("litellm_proxy_api_key", st.session_state.litellm_proxy_api_key),
+                on_change=lambda: save_to_storage(
+                    "litellm_proxy_api_key", st.session_state.litellm_proxy_api_key
+                ),
             )
 
         st.number_input(
@@ -178,7 +184,10 @@ async def main():
 
     if not st.session_state.auth_validated:
         if auth_error := validate_auth(
-            st.session_state.provider, st.session_state.api_key
+            st.session_state.provider,
+            st.session_state.litellm_proxy_api_key
+            if st.session_state.provider == APIProvider.LITELLM
+            else st.session_state.api_key,
         ):
             st.warning(f"Please resolve the following auth issue:\n\n{auth_error}")
             return
@@ -251,7 +260,9 @@ async def main():
                     tab=http_logs,
                     response_state=st.session_state.responses,
                 ),
-                api_key=st.session_state.api_key,
+                api_key=st.session_state.litellm_proxy_api_key
+                if st.session_state.provider == APIProvider.LITELLM
+                else st.session_state.api_key,
                 only_n_most_recent_images=st.session_state.only_n_most_recent_images,
             )
 
@@ -309,7 +320,9 @@ def validate_auth(provider: APIProvider, api_key: str | None):
         except DefaultCredentialsError:
             return "Your google cloud credentials are not set up correctly."
     if provider == APIProvider.LITELLM:
-        litellm_key = st.session_state.get("litellm_proxy_api_key", None) or os.getenv("LITELLM_PROXY_API_KEY", None)
+        litellm_key = st.session_state.get("litellm_proxy_api_key", None) or os.getenv(
+            "LITELLM_PROXY_API_KEY", None
+        )
         if not litellm_key:
             return "Enter your LiteLLM Proxy API key in the sidebar to continue."
 

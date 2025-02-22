@@ -112,7 +112,10 @@ async def sampling_loop(
         elif provider == APIProvider.BEDROCK:
             client = AnthropicBedrock()
         elif provider == APIProvider.LITELLM:
-            client = Anthropic(base_url="https://litellm.ml-serving-internal.scale.com", api_key=api_key)
+            client = Anthropic(
+                base_url="https://litellm.ml-serving-internal.scale.com",
+                api_key=api_key,
+            )
 
         if enable_prompt_caching:
             betas.append(PROMPT_CACHING_BETA_FLAG)
@@ -134,12 +137,13 @@ async def sampling_loop(
         # implementation may be able call the SDK directly with:
         # `response = client.messages.create(...)` instead.
         try:
+            tool_params = tool_collection.to_params()
             raw_response = client.beta.messages.with_raw_response.create(
                 max_tokens=max_tokens,
                 messages=messages,
                 model=model,
                 system=[system],
-                tools=tool_collection.to_params(),
+                tools=tool_params,
                 betas=betas,
             )
         except (APIStatusError, APIResponseValidationError) as e:

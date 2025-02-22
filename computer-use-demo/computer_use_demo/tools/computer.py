@@ -93,8 +93,8 @@ class ComputerTool(BaseAnthropicTool):
     def __init__(self):
         super().__init__()
 
-        self.width = int(os.getenv("WIDTH") or 0)
-        self.height = int(os.getenv("HEIGHT") or 0)
+        self.width = int(os.getenv("WIDTH", 1024))
+        self.height = int(os.getenv("HEIGHT", 768))
         assert self.width and self.height, "WIDTH, HEIGHT must be set"
         if (display_num := os.getenv("DISPLAY_NUM")) is not None:
             self.display_num = int(display_num)
